@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BulletMLSample", "BulletMLSample\BulletMLSample.csproj", "{A59EA322-98A6-43E1-9539-3646876FD24A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A59EA322-98A6-43E1-9539-3646876FD24A}.Debug|x86.ActiveCfg = Debug|x86
+		{A59EA322-98A6-43E1-9539-3646876FD24A}.Debug|x86.Build.0 = Debug|x86
+		{A59EA322-98A6-43E1-9539-3646876FD24A}.Release|x86.ActiveCfg = Release|x86
+		{A59EA322-98A6-43E1-9539-3646876FD24A}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
