@@ -38,9 +38,6 @@
     <ApplicationIcon>Icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="BulletMLLib\BulletMLBullet.cs" />
-    <Compile Include="BulletMLLib\BulletMLParser.cs" />
-    <Compile Include="BulletMLLib\BulletMLTree.cs" />
     <Compile Include="BulletSystem.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="Mover.cs" />
@@ -81,6 +78,12 @@
     <None Include="Content\xml\bulletml.dtd">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BulletMLLib\BulletMLLib\BulletMLLib.csproj">
+      <Project>{e8830476-f2f4-447d-9917-3c8da594426c}</Project>
+      <Name>BulletMLLib</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\MonoGame\v3.0\MonoGame.Content.Builder.targets" />

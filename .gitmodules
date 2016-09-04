@@ -1,0 +1,3 @@
+[submodule "BulletMLLib"]
+	path = BulletMLLib
+	url = ../BulletMLLib
