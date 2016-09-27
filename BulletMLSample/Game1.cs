@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using BulletMLLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -13,82 +17,86 @@ namespace BulletMLSample
     {
         static public GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
+
         Texture2D texture;
+        Texture2D playerTexture;
+
         static public Myship myship;
-        static public BulletMLParser parser = new BulletMLParser(); //BulletMLを解析し、解析結果を保持するクラス。XMLごとに必要です。
+        static public BulletMLParser parser; //BulletMLを解析し、解析結果を保持するクラス。XMLごとに必要です。
         static public Random rand = new Random();
-        int timer = 0;
         Mover mover;
+
+        private KeyboardState previousKeyboardState;
+
+        private List<String> patternsFilename = new List<string>();
+        private int patternIndex = 0;
+
         public Game1()
         {
-            graphics = new GraphicsDeviceManager(this);
-            graphics.PreferredBackBufferWidth = 320;// 640;
-            graphics.PreferredBackBufferHeight = 240;// 480;
+            graphics = new GraphicsDeviceManager(this)
+            {
+                PreferredBackBufferWidth = 1280,
+                PreferredBackBufferHeight = 720
+            };
+
             Content.RootDirectory = "Content";
         }
 
         protected override void Initialize()
         {
             base.Initialize();
+
             //自機初期化
             myship = new Myship();
             myship.Init();
+
+            previousKeyboardState = Keyboard.GetState();
         }
 
         protected override void LoadContent()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            texture = Content.Load<Texture2D>("Sprites\\bullet");
-            parser.ParseXML(@"Content\xml\sample.xml"); ///BulletMLを解析
-            //parser.ParseXML(@"Content\xml\[1943]_rolling_fire.xml");
-            //parser.ParseXML(@"Content\xml\[Guwange]_round_2_boss_circle_fire.xml");
-            //parser.ParseXML(@"Content\xml\[Guwange]_round_3_boss_fast_3way.xml");
-            //parser.ParseXML(@"Content\xml\[Guwange]_round_4_boss_eye_ball.xml");
-            //parser.ParseXML(@"Content\xml\[G_DARIUS]_homing_laser.xml");
-            //parser.ParseXML(@"Content\xml\[Progear]_round_1_boss_grow_bullets.xml");
-            //parser.ParseXML(@"Content\xml\[Progear]_round_2_boss_struggling.xml");
-            //parser.ParseXML(@"Content\xml\[Progear]_round_3_boss_back_burst.xml");
-            //parser.ParseXML(@"Content\xml\[Progear]_round_3_boss_wave_bullets.xml");
-            //parser.ParseXML(@"Content\xml\[Progear]_round_4_boss_fast_rocket.xml");
-            //parser.ParseXML(@"Content\xml\[Progear]_round_5_boss_last_round_wave.xml");
-            //parser.ParseXML(@"Content\xml\[Progear]_round_5_middle_boss_rockets.xml");
-            //parser.ParseXML(@"Content\xml\[Progear]_round_6_boss_parabola_shot.xml");
-            //parser.ParseXML(@"Content\xml\[Psyvariar]_X-A_boss_opening.xml");
-            //parser.ParseXML(@"Content\xml\[Psyvariar]_X-A_boss_winder.xml");
-            //parser.ParseXML(@"Content\xml\[Psyvariar]_X-B_colony_shape_satellite.xml");
-            //parser.ParseXML(@"Content\xml\[XEVIOUS]_garu_zakato.xml");
-            //BulletMLの初期化
-            BulletMLManager.Init(new MyBulletFunctions());
+            texture = Content.Load<Texture2D>("Sprites\\bullets");
+            playerTexture = Content.Load<Texture2D>("Sprites\\player");
 
-            //敵を一つ画面中央に作成し、弾を吐くよう設定
-            mover = MoverManager.CreateMover();
-            mover.pos = new Vector2(graphics.PreferredBackBufferWidth / 2, graphics.PreferredBackBufferHeight / 2);
-            mover.SetBullet(parser.tree); //BulletMLで動かすように設定
+            foreach (var source in Directory.GetFiles("Content\\xml\\Tests", "*.xml"))
+            {
+                patternsFilename.Add(source);
+            }
+
+            ParseNewPattern();
+
+            AddBullet();
         }
-
 
         protected override void UnloadContent()
         {
         }
 
-
         protected override void Update(GameTime gameTime)
         {
             if (Keyboard.GetState().IsKeyDown(Keys.Escape))
                 this.Exit();
-            timer++;
-            if (timer > 60)
+
+            if (Keyboard.GetState().IsKeyDown(Keys.PageUp) && previousKeyboardState.IsKeyUp(Keys.PageUp))
             {
-                timer = 0;
-                if (mover.used == false)
-                {
-                    //敵を一つ画面中央に作成し、弾を吐くよう設定
-                    mover = MoverManager.CreateMover();
-                    mover.pos = new Vector2(graphics.PreferredBackBufferWidth / 4 + graphics.PreferredBackBufferWidth / 2 * (float)rand.NextDouble(), graphics.PreferredBackBufferHeight / 2 * (float)rand.NextDouble());
-                    mover.SetBullet(parser.tree); //BulletMLで動かすように設定
-                }
+                patternIndex = (patternIndex + 1) % (patternsFilename.Count - 1);
+                ParseNewPattern();
+                AddBullet();
             }
+            else if (Keyboard.GetState().IsKeyDown(Keys.PageDown) && previousKeyboardState.IsKeyUp(Keys.PageDown))
+            {
+                patternIndex = (patternIndex - 1) < 0 ? patternsFilename.Count - 1 : patternIndex - 1;
+                ParseNewPattern();
+                AddBullet();
+            }
+
+            if (Keyboard.GetState().IsKeyDown(Keys.LeftControl) && previousKeyboardState.IsKeyUp(Keys.LeftControl))
+                AddBullet();
+
+            if (Keyboard.GetState().IsKeyDown(Keys.Space))
+                AddBullet();
 
             //すべてのMoverを行動させる
             MoverManager.Update();
@@ -96,6 +104,8 @@ namespace BulletMLSample
             MoverManager.FreeMovers();
             // 自機を更新
             myship.Update();
+
+            previousKeyboardState = Keyboard.GetState();
 
             base.Update(gameTime);
         }
@@ -108,13 +118,38 @@ namespace BulletMLSample
             spriteBatch.Begin();
 
             foreach (Mover mover in MoverManager.movers)
-                spriteBatch.Draw(texture, mover.pos, Color.Black);
+            {
+                spriteBatch.Draw(texture,
+                    new Rectangle((int) mover.pos.X, (int) mover.pos.Y, texture.Width, texture.Height), null,
+                    Color.White, mover.Dir,
+                    new Vector2(texture.Width/2f, texture.Height/2f), SpriteEffects.None, 0f
+                );
+            }
 
-            spriteBatch.Draw(texture, myship.pos, Color.Black);
+            spriteBatch.Draw(playerTexture, myship.pos, Color.White);
 
             spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        private void ParseNewPattern()
+        {
+            parser = new BulletMLParser();
+            parser.ParseXML(patternsFilename[patternIndex]);
+            BulletMLManager.Init(new MyBulletFunctions());
+
+            Debug.Print("Current pattern: " + patternsFilename[patternIndex]);
+        }
+
+        private void AddBullet()
+        {
+            MoverManager.FreeMovers();
+
+            //敵を一つ画面中央に作成し、弾を吐くよう設定
+            mover = MoverManager.CreateMover();
+            mover.pos = new Vector2(graphics.PreferredBackBufferWidth / 2f, graphics.PreferredBackBufferHeight / 2f);
+            mover.SetBullet(parser.tree); //BulletMLで動かすように設定
         }
     }
 }
